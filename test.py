@@ -30,8 +30,8 @@
 
 from supybot.test import *
 
-class EurestTestCase(PluginTestCase):
-    plugins = ('Eurest',)
+class LunchTestCase(PluginTestCase):
+    plugins = ('Lunch',)
 
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:

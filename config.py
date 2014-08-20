@@ -37,13 +37,14 @@ def configure(advanced):
     # user or not.  You should effect your configuration by manipulating the
     # registry as appropriate.
     from supybot.questions import expect, anything, something, yn
-    conf.registerPlugin('Eurest', True)
+    conf.registerPlugin('Lunch', True)
 
-
-Eurest = conf.registerPlugin('Eurest')
-# This is where your configuration variables (if any) should go.  For example:
-# conf.registerGlobalValue(Eurest, 'someConfigVariableName',
-#     registry.Boolean(False, """Help for someConfigVariableName."""))
-
+Lunch = conf.registerPlugin('Lunch')
+conf.registerGlobalValue(Lunch, 'channels',
+    registry.String('#qt-oslo', """The channel(s) where the menu is announced."""))
+conf.registerGlobalValue(Lunch, 'time',
+    registry.String('11:45', """The time of day when the menu is announced (hh:mm)."""))
+conf.registerGlobalValue(Lunch, 'url',
+    registry.String('http://bi.delimeeting.imaker.no/menyer/kantinemeny/d6/', """The menu URL."""))
 
 # vim:set shiftwidth=4 tabstop=4 expandtab textwidth=79:

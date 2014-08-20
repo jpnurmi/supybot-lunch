@@ -30,18 +30,96 @@
 
 import supybot.utils as utils
 from supybot.commands import *
+import supybot.ircmsgs as ircmsgs
 import supybot.plugins as plugins
 import supybot.ircutils as ircutils
+import supybot.schedule as schedule
 import supybot.callbacks as callbacks
 
+import bs4
+import time
+import string
+import urllib2
+import calendar
+import datetime
+from dateutil.relativedelta import *
 
-class Eurest(callbacks.Plugin):
-    """Add the help for "@plugin help Eurest" here
+class Lunch(callbacks.Plugin):
+    """Add the help for "@plugin help Lunch" here
     This should describe *how* to use this plugin."""
-    pass
 
+    def __init__(self, irc):
+        self.__parent = super(Lunch, self)
+        self.__parent.__init__(irc)
+        self.scheduled = None
+        self._schedule()
+        self.irc = irc
 
-Class = Eurest
+    def die(self):
+        if self.scheduled:
+            schedule.removeEvent(self.scheduled)
+        self.__parent.die()
 
+    def _schedule(self, tomorrow=None):
+        try:
+            now = datetime.datetime.now()
+            when = datetime.datetime.strptime(self.registryValue('time'), '%H:%M')
+            when = when.replace(now.year, now.month, now.day)
+            if tomorrow or now > when:
+                when += relativedelta(days=1)
+            self.scheduled = schedule.addEvent(self._announce, time.mktime(when.timetuple()))
+        except ValueError:
+            pass
+
+    def _announce(self):
+        menu = self._menu()
+        if menu:
+            channels = self.registryValue('channels').split(',')
+            for channel in channels:
+                self.irc.queueMsg(ircmsgs.privmsg(channel, menu))
+        self._schedule(tomorrow=True)
+
+    def _menu(self, query=None):
+        url = self.registryValue('url')
+        soup = bs4.BeautifulSoup(urllib2.urlopen(url).read())
+
+        # <table class="iTable ukesmeny">
+        #   <thead>
+        #     <tr><th>Mandag / Monday</th></tr>
+        #     ...
+        #   </thead>
+        #   <tbody>
+        #     <tr><td><p>Fish and chips</p></td></tr>
+        #     ...
+        #   </tbody>
+        # </table>
+
+        table = soup.find('table', attrs={'class': 'iTable ukesmeny'})
+        keys = [th.string for th in table.find_all('th')]
+        values = []
+        for td in table.find_all('td'):
+            values.append(', '.join([' '.join(p.stripped_strings) for p in td.find_all('p')]))
+        values = dict(zip(keys, values))
+
+        day = query or calendar.day_name[datetime.datetime.today().weekday()]
+        for match in [key for key in keys for word in key.split() if len(word) > 1 and word.lower().startswith(day.lower())]:
+            if values[match]:
+                return '%s: %s - %s' % (match.encode('utf-8'), values[match].encode('utf-8'), url)
+        return None
+
+    def lunch(self, irc, msg, args, query):
+        """ <day>
+
+        Eurest BI (Oslo) lunch menu for the given day.
+        """
+        menu = self._menu(query)
+        if menu:
+            irc.reply(menu)
+        else:
+            irc.reply(self.registryValue('url'))
+
+    lunch = wrap(lunch, [additional('text')])
+
+Class = Lunch
 
 # vim:set shiftwidth=4 softtabstop=4 expandtab textwidth=79:
