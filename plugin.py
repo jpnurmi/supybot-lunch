@@ -51,33 +51,20 @@ class Lunch(callbacks.Plugin):
     def __init__(self, irc):
         self.__parent = super(Lunch, self)
         self.__parent.__init__(irc)
-        self.scheduled = None
-        self._schedule()
         self.irc = irc
+        schedule.addPeriodicEvent(self._check, self.registryValue('period'), 'lunch')
 
     def die(self):
-        if self.scheduled:
-            schedule.removeEvent(self.scheduled)
+        schedule.removeEvent('lunch')
         self.__parent.die()
 
-    def _schedule(self, tomorrow=None):
-        try:
-            now = datetime.datetime.now()
-            when = datetime.datetime.strptime(self.registryValue('time'), '%H:%M')
-            when = when.replace(now.year, now.month, now.day)
-            if tomorrow or now > when:
-                when += relativedelta(days=1)
-            self.scheduled = schedule.addEvent(self._announce, time.mktime(when.timetuple()))
-        except ValueError:
-            pass
-
-    def _announce(self):
+    def _check(self):
         menu = self._menu()
-        if menu:
-            channels = self.registryValue('channels').split(',')
-            for channel in channels:
-                self.irc.queueMsg(ircmsgs.privmsg(channel, menu))
-        self._schedule(tomorrow=True)
+        channels = self.registryValue('channels').split(',')
+        for channel in channels:
+            topic = self.irc.state.channels[channel].topic
+            if topic != menu:
+                self.irc.queueMsg(ircmsgs.topic(channel, menu))
 
     def _menu(self, query=None):
         url = self.registryValue('url')
@@ -105,18 +92,14 @@ class Lunch(callbacks.Plugin):
         for match in [key for key in keys for word in key.split() if len(word) > 1 and word.lower().startswith(day.lower())]:
             if values[match]:
                 return '%s: %s - %s' % (match.encode('utf-8'), values[match].encode('utf-8'), url)
-        return None
+        return url
 
     def lunch(self, irc, msg, args, query):
         """ <day>
 
         Eurest BI (Oslo) lunch menu for the given day.
         """
-        menu = self._menu(query)
-        if menu:
-            irc.reply(menu)
-        else:
-            irc.reply(self.registryValue('url'))
+        irc.reply(self._menu(query))
 
     lunch = wrap(lunch, [additional('text')])
 

@@ -42,8 +42,8 @@ def configure(advanced):
 Lunch = conf.registerPlugin('Lunch')
 conf.registerGlobalValue(Lunch, 'channels',
     registry.String('#qt-oslo', """The channel(s) where the menu is announced."""))
-conf.registerGlobalValue(Lunch, 'time',
-    registry.String('11:45', """The time of day when the menu is announced (hh:mm)."""))
+conf.registerGlobalValue(Lunch, 'period',
+    registry.PositiveInteger(900, """The period in seconds how often the menu is checked."""))
 conf.registerGlobalValue(Lunch, 'url',
     registry.String('http://bi.delimeeting.imaker.no/menyer/kantinemeny/d6/', """The menu URL."""))
 
