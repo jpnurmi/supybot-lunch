@@ -38,6 +38,7 @@ import supybot.callbacks as callbacks
 
 import bs4
 import time
+import pytz
 import string
 import urllib2
 import calendar
@@ -88,7 +89,7 @@ class Lunch(callbacks.Plugin):
             values.append(', '.join([' '.join(p.stripped_strings) for p in td.find_all('p')]))
         values = dict(zip(keys, values))
 
-        day = query or calendar.day_name[datetime.datetime.today().weekday()]
+        day = query or calendar.day_name[datetime.datetime.now(pytz.timezone('Europe/Oslo')).weekday()]
         for match in [key for key in keys for word in key.split() if len(word) > 1 and word.lower().startswith(day.lower())]:
             if values[match]:
                 return '%s: %s - %s' % (match.encode('utf-8'), values[match].encode('utf-8'), url)
