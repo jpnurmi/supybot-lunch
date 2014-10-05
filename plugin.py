@@ -53,13 +53,13 @@ class Lunch(callbacks.Plugin):
         self.__parent = super(Lunch, self)
         self.__parent.__init__(irc)
         self.irc = irc
-        schedule.addPeriodicEvent(self._check, self.registryValue('period'), 'lunch')
+        schedule.addPeriodicEvent(self._checkTopic, self.registryValue('period'), 'lunch')
 
     def die(self):
         schedule.removeEvent('lunch')
         self.__parent.die()
 
-    def _check(self):
+    def _checkTopic(self):
         menu = self._menu()
         channels = self.registryValue('channels').split(',')
         for channel in channels:
