@@ -42,6 +42,8 @@ def configure(advanced):
 Lunch = conf.registerPlugin('Lunch')
 conf.registerGlobalValue(Lunch, 'channels',
     registry.String('#qt-oslo', """The channel(s) where the menu is announced."""))
+conf.registerGlobalValue(Lunch, 'time',
+    registry.String('10:30', """The time of day when the menu is announced (hh:mm)."""))
 conf.registerGlobalValue(Lunch, 'period',
     registry.PositiveInteger(900, """The period in seconds how often the menu is checked."""))
 conf.registerGlobalValue(Lunch, 'url',

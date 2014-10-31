@@ -53,9 +53,13 @@ class Lunch(callbacks.Plugin):
         self.__parent = super(Lunch, self)
         self.__parent.__init__(irc)
         self.irc = irc
+        self.scheduled = None
+        self._scheduleAnnouncement()
         schedule.addPeriodicEvent(self._checkTopic, self.registryValue('period'), 'lunch')
 
     def die(self):
+        if self.scheduled:
+            schedule.removeEvent(self.scheduled)
         schedule.removeEvent('lunch')
         self.__parent.die()
 
@@ -66,6 +70,25 @@ class Lunch(callbacks.Plugin):
             topic = self.irc.state.channels[channel].topic
             if topic != menu:
                 self.irc.queueMsg(ircmsgs.topic(channel, menu))
+
+    def _scheduleAnnouncement(self, tomorrow=None):
+        try:
+            now = datetime.datetime.now(pytz.timezone('Europe/Oslo'))
+            when = datetime.datetime.strptime(self.registryValue('time'), '%H:%M')
+            when = when.replace(now.year, now.month, now.day, tzinfo=pytz.timezone('Europe/Oslo'))
+            if tomorrow or now > when:
+                when += relativedelta(days=1)
+            self.scheduled = schedule.addEvent(self._announce, time.mktime(when.timetuple()))
+        except ValueError:
+            pass
+
+    def _announce(self):
+        menu = self._menu()
+        if menu != self.registryValue('url'):
+            channels = self.registryValue('channels').split(',')
+            for channel in channels:
+                self.irc.queueMsg(ircmsgs.privmsg(channel, menu))
+        self._scheduleAnnouncement(tomorrow=True)
 
     def _menu(self, query=None):
         url = self.registryValue('url')
